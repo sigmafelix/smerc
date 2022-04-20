@@ -57,14 +57,21 @@ scan.sim = function(nsim = 1, nn, ty, ex, type = "poisson",
       ty = sum(ysim)
     }
     # compute test statistics for each zone
-    yin = nn.cumsum(nn, ysim)
     if (type == "poisson") {
-      tall = stat.poisson(yin, ty - yin, ein, eout)
+      yin = nn.cumsum(nn, ysim)
+      tall = stat_poisson(yin, ty - yin, ein, eout)
+      tall = tall[yin >= min.cases]
     } else if (type == "binomial") {
-      tall = stat.binom(yin, ty - yin, ty, popin, popout, tpop)
+      yin = nn.cumsum(nn, ysim)
+      tall = stat_binom(yin, ty - yin, ty, popin, popout, tpop)
+    } else if (type == "normal") {
+      idx = seq.int(1, length(cases))
+      yin = nn.getelem(nn, ysim)
+      yout = lapply(yin, function(x) idx[!idx %in% x])
+      tall = mapply(function(yi, yo) stat.normal(yi, yo, a = 0),
+                      yin, yout, SIMPLIFY = TRUE)
     }
-    # make sure minimum number of cases satisfied
-    max(tall[yin >= min.cases])
+    max(tall)
   }, cl = cl)
   unlist(tsim, use.names = FALSE)
 }

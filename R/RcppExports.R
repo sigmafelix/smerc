@@ -13,6 +13,14 @@ noc_cpp <- function(x) {
     .Call(`_smerc_noc_cpp`, x)
 }
 
+roll_psum <- function(X, p = 1) {
+    .Call(`_smerc_roll_psum`, X, p)
+}
+
+roll_var <- function(X) {
+    .Call(`_smerc_roll_var`, X)
+}
+
 scsg2_cpp <- function(nn, w, idx, nlevel, lprimes, verbose = FALSE) {
     .Call(`_smerc_scsg2_cpp`, nn, w, idx, nlevel, lprimes, verbose)
 }

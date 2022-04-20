@@ -34,15 +34,35 @@
 #'                     a = 0.5, shape_all = enn$shape_all,
 #'                     ein = ein, eout = ty - ein)
 elliptic.sim = function(nsim = 1, nn, ty, ex, a, shape_all,
-                        ein, eout, cl = NULL, min.cases = 2) {
+                        ein, eout, type = "poisson", cl = NULL, min.cases = 2) {
   # compute max test stat for nsim simulated data sets
   tsim = pbapply::pblapply(seq_len(nsim), function(i) {
-    # simulate new data
-    ysim = stats::rmultinom(1, size = ty, prob = ex)
     # compute test statistics for each zone
-    yin = nn.cumsum(nn, ysim)
-    # make sure minimum number of cases satisfied
-    max(stat.poisson(yin, ty - yin, ein, eout, a, shape_all)[yin >= min.cases])
+    if (type == "poisson") {
+      # simulate new data
+      ysim = stats::rmultinom(1, size = ty, prob = ex)
+      yin = nn.cumsum(nn, ysim)
+      max(stat_poisson(yin, ty - yin, ein, eout, a, shape_all))[yin >= min.cases]
+    } else if (type == "normal") {
+      # for normal statistic, ex = cases.
+      ysim = sample(ex, length(ex), replace = FALSE)
+      idx = seq.int(1, length(ex))
+      ein = NA
+      eout = NA
+      ty = sum(ysim)
+      yin = nn.cumsum(nn, ysim)
+      ysqin = nn.cumsumsq(nn, ysim)
+      ysqout = nn.cumsumsq(nn, ysim, out = TRUE)
+      lenin = nn.cumlen(nn, ysim)
+      tlen = length(ysim)
+      varin = nn.cumvar(nn, ysim)
+      varout = nn.cumvar(nn, ysim, out = TRUE)
+      tvar = var(ysim)
+
+      tobs = stat.normal(yin = yin, ty = ty, ysqin = ysqin, ysqout = ysqout,
+                        lenin = lenin, tlen = tlen, varin = varin, varout = varout, tvar = tvar)
+      max(tobs)
+    }
   }, cl = cl)
   unlist(tsim, use.names = FALSE)
 }
@@ -52,16 +72,16 @@ arg_check_elliptic_sim = function(nsim, nn, ty, ex, ein, eout, shape_all) {
     stop("nsim must be a positive integer")
   }
   if (!is.list(nn)) stop("nn must be a list")
-  if (length(ty) != 1) stop("ty must be a single number")
-  if (!is.numeric(ex)) stop("ex must be a numeric vector")
+  if (length(ty) != 1 & type != "normal") stop("ty must be a single number")
+  if (!is.numeric(ex) & type != "normal") stop("ex must be a numeric vector")
   nstat = sum(sapply(nn, length))
   if (length(shape_all) != nstat) {
     stop("length(shapenn) is not compatible with the dimensionality of nn")
   }
-  if (length(ein) != nstat) {
+  if (length(ein) != nstat & type != "normal") {
     stop("the length of ein is not compatible with the dimensionality of nn")
   }
-  if (length(eout) != nstat) {
+  if (length(eout) != nstat & type != "normal") {
     stop("the length of eout is not compatible with the dimensionality of nn")
   }
 }

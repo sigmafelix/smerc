@@ -163,3 +163,79 @@ arg_check_scan_stat = function(yin, ty, ein, tpop, popin, type,
     stop("tpop must be provided for the binomial model")
   }
 }
+
+
+#' Spatial scan statistic
+#'
+#' \code{stat.normal} calculates the normal spatial scan statistic
+#' for a zone (a set of spatial regions).  The statistic is
+#' the log of the likelihood ratio test statistic of the
+#' chosen distribution. If \code{a} is more than zero, this statistic is penalized.
+#' See references.
+#'
+#' @param yin The total number of cases in the zone.
+#' @param ty The total number of cases in the study area.
+#' @param ysqin The sum of squared cases in the zone.
+#' @param ysqout The sum of squared cases out of the zone.
+#' @param lenin The number of areas in the zone.
+#' @param tlen The total number of areas in the study area.
+#' @param varin The variance of cases in the zone.
+#' @param varout The variance of cases out of the zone.
+#' @param tvar The total variance of cases in the study area.
+#' @param a Penalty.
+#' @param shape Ellipse shape. Defined as [major axis]/[minor axis]
+#' @return A vector of normal scan statistics.
+#' @author Insang Song
+#' @export
+#' @rdname scan.stat
+stat.normal = 
+function (yin, ty, ysqin, ysqout, lenin, tlen, varin, varout, tvar, a = 0, shape = 1)
+{
+  # good = which(yin > 0)
+  # tall = numeric(length(yin))
+	# vlen1 = cumsum(c(1, vlen[-length(vlen)]))
+  # vlen2 = vlen
+  yout = ty - yin
+  lenout = tlen - lenin
+  mu0 = (yin * lenin) + (yout * lenout) / tlen
+  N0 = tlen
+  sigma0 = sqrt(tvar * (N0-1) / N0)
+  llnull = -N0 * log(sqrt(2*pi)) - (N0 * log(sigma0)) - (N0/2)#sum(((yall - mu0) ^ 2) / (2 * (sigma0^2)))
+
+	#mu0 = mapply(function(vin, vout, nnin, nnout) weighted.mean(c(vin, vout), c(nnin, nnout)), yin, yout, nin, ntotal, SIMPLIFY = TRUE)
+	# yall = c(yin, yout)
+	# mu0 = mean(yall)
+	# N0 = length(yall)
+	# sigma0 = sqrt(var(yall) * (N0-1) / N0)
+	# llnull = -N0 * log(sqrt(2*pi)) - (N0 * log(sigma0)) - (N0/2)#sum(((yall - mu0) ^ 2) / (2 * (sigma0^2)))
+	
+	## TODO: var(yall) hack: only use yin, yout, nin, and ntotal!
+
+  muin = yin / lenin
+  muout = yout / lenout
+  
+  sigmasqin = (1/N0) * (ysqin - (2 * yin * muin) + (lenin * (muin ^ 2)) + ysqout - (2 * yout * muout) + (lenout * (muout ^ 2)))
+
+	# sigmasqin = (1/N0) * (sum(yin^2) - (2 * xin * muin) + (Nin * (muin^2)) + sum(yout^2) - (2 * xout * muout) + (Nout * (muout^2)))
+	
+	llin = (-N0 * log(sqrt(2 * pi))) - (N0 *log(sqrt(sigmasqin))) - (N0 / 2)
+  
+
+	# Nin = length(yin)
+	# Nout = length(yout)
+	# muin = mean(yin)
+	# xin = sum(yin)
+	# muout = mean(yout)
+	# xout = sum(yout)
+	
+	
+  tall = llin / llnull
+	#tall[good] = llin[good] / llnull[good]
+    #tall[good][lrin < lrout] = 0
+    if (a > 0) {
+        stopifnot(shape > 1)
+        #tall[i] = tall[i] * (4 * shape[i]/(shape[i] + 1)^2)^a
+        tall = tall * (4 * shape/(shape + 1)^2)^a
+    }
+    return(tall)
+}

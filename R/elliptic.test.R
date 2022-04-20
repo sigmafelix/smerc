@@ -71,37 +71,70 @@ elliptic.test = function(coords, cases, pop,
 
   enn = elliptic.nn(coords, pop = pop, ubpop = ubpop,
                     shape = shape, nangle = nangle)
-  # determine the expected cases in/out each successive
-  # window, total number of cases, total population
-  ein = nn.cumsum(enn$nn, ex)
   ty = sum(cases) # sum of all cases
-  eout = ty - ein # counts expected outside the window
-
-  # determine yin and yout for all windows for observed data
-  yin = nn.cumsum(enn$nn, cases)
-
-  ### calculate scan statistics for observed data
-  # of distance from observation centroid
-  tobs = stat.poisson(yin, ty - yin, ein, eout, a = a, shape = enn$shape_all)
 
   # determine distinct zones
   wdup = nndup(enn$nn, N)
 
-  # remove zones with a test statistic of 0
-  # or fewer than minimum number of cases or
-  # indistinct
-  w0 = which(tobs == 0 | yin < min.cases | wdup)
+  if (type != "normal") { 
+    # determine the expected cases in/out each successive
+    # window, total number of cases, total population
+    ein = nn.cumsum(enn$nn, ex)
+    eout = ty - ein # counts expected outside the window
+
+    # determine yin and yout for all windows for observed data
+    yin = nn.cumsum(enn$nn, cases)
+
+    ### calculate scan statistics for observed data
+    # of distance from observation centroid
+    tobs = stat.poisson(yin, ty - yin, ein, eout, a = a, shape = enn$shape_all)
+
+    # remove zones with a test statistic of 0
+    # or fewer than minimum number of cases or
+    # indistinct
+    w0 = which(tobs == 0 | yin < min.cases | wdup)
+  }
+
+  if (type == "normal") {
+    # idx = seq.int(1, length(cases))
+
+    ein = NA
+    eout = NA
+    ex = cases # cases if normal statistic is chosen
+    ty = sum(cases)
+    yin = nn.cumsum(enn$nn, cases)
+    ysqin = nn.cumsumsq(enn$nn, cases)
+    ysqout = nn.cumsumsq(enn$nn, cases, out = TRUE)
+    lenin = nn.cumlen(enn$nn, cases)
+    tlen = N
+    varin = nn.cumvar(enn$nn, cases)
+    varout = nn.cumvar(enn$nn, cases, out = TRUE)
+    tvar = var(cases)
+
+    tobs = stat.normal(yin = yin, ty = ty, ysqin = ysqin, ysqout = ysqout,
+                       lenin = lenin, tlen = tlen, varin = varin, varout = varout, tvar = tvar)
+    # yin = nn.getelem(enn$nn, cases)
+    # yout = lapply(yin, function(x) idx[!idx %in% x])
+    # shangle_idx = cumsum(sapply(enn$nn, length))
+    # shape_all = enn$shape_all[shangle_idx]
+    # angle_all = enn$angle_all[shangle_idx]
+    # tobs = mapply(function(yi, yo, sh, ang) stat.normal(yi, yo, a = a, shape = sh),
+    #                 yin, yout, shape_all, SIMPLIFY = TRUE)
+    w0 = which(tobs == 0 | wdup | is.infinite(tobs) | is.nan(tobs) | !is.numeric(tobs))
+  }
+
   tobs = tobs[-w0]
   shape_all = enn$shape_all[-w0]
   angle_all = enn$angle_all[-w0]
 
   # setup list for call
   if (nsim > 0) {
-    tsim = elliptic.sim(nsim = nsim, nn = enn$nn, ty = ty,
+    # reduce the number of tests using w0
+    tsim = elliptic.sim(nsim = nsim, nn = enn$nn[-w0], ty = ty,
                         ex = ex, a = a,
-                        shape_all = enn$shape_all,
-                        ein = ein, eout = eout, cl = cl,
-                        min.cases = min.cases)
+                        shape_all = shape_all, # previously enn$shape_all
+                        type = type,
+                        ein = ein, eout = eout, cl = cl)
 
     # p-values associated with these max statistics for each centroid
     pvalue = mc.pvalue(tobs, tsim)

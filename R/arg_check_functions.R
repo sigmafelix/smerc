@@ -417,8 +417,8 @@ arg_check_type = function(type) {
   if (!is.character(type)) {
     stop("type must be a character")
   }
-  if (!is.element(type, c("poisson", "binomial"))) {
-    stop("type must be 'poisson' or 'binomial'")
+  if (!is.element(type, c("poisson", "binomial", "normal"))) {
+    stop("type must be 'poisson', 'binomial', or 'normal'")
   }
 }
 
