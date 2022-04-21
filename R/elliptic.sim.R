@@ -42,7 +42,7 @@ elliptic.sim = function(nsim = 1, nn, ty, ex, a, shape_all,
       # simulate new data
       ysim = stats::rmultinom(1, size = ty, prob = ex)
       yin = nn.cumsum(nn, ysim)
-      max(stat_poisson(yin, ty - yin, ein, eout, a, shape_all))[yin >= min.cases]
+      max(stat.poisson(yin, ty - yin, ein, eout, a, shape_all)[yin >= min.cases])
     } else if (type == "normal") {
       # for normal statistic, ex = cases.
       ysim = sample(ex, length(ex), replace = FALSE)

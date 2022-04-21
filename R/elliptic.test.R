@@ -130,14 +130,17 @@ elliptic.test = function(coords, cases, pop,
   # setup list for call
   if (nsim > 0) {
     # reduce the number of tests using w0
-    tsim = elliptic.sim(nsim = nsim, nn = enn$nn[-w0], ty = ty,
+    tsim = elliptic.sim(nsim = nsim, nn = enn$nn, ty = ty,
                         ex = ex, a = a,
                         shape_all = shape_all, # previously enn$shape_all
                         type = type,
                         ein = ein, eout = eout, cl = cl)
 
     # p-values associated with these max statistics for each centroid
-    pvalue = mc.pvalue(tobs, tsim)
+    pvalue = switch(
+      type,
+      poisson = mc.pvalue(tobs, tsim),
+      normal = mc.pvalue.normal(tobs, tsim))
   } else {
     pvalue = rep(1, length(tobs))
   }

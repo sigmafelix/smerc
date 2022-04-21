@@ -19,3 +19,8 @@ mc.pvalue = function(tobs, tsim) {
   nsim = length(tsim)
   unname(sapply(tobs, function(x) (sum(tsim >= x) + 1) / (nsim + 1)))
 }
+
+mc.pvalue.normal = function(tobs, tsim) {
+  nsim = length(tsim)
+  unname(sapply(tobs, function(x) (rank(-c(x, tsim))[1] / (nsim + 1))))
+}
