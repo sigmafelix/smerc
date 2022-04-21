@@ -47,21 +47,27 @@ elliptic.sim = function(nsim = 1, nn, ty, ex, a, shape_all,
       # for normal statistic, ex = cases.
       ysim = sample(ex, length(ex), replace = FALSE)
       idx = seq.int(1, length(ex))
+      # there are no expected values for normal statistic
       ein = NA
       eout = NA
       ty = sum(ysim)
       yin = nn.cumsum(nn, ysim)
+      # sum of squares
       ysqin = nn.cumsumsq(nn, ysim)
       ysqout = nn.cumsumsq(nn, ysim, out = TRUE)
+      # indices in the window. basically being seq(1, k, 1)
+      # where k is the length of each element in the list
       lenin = nn.cumlen(nn, ysim)
       tlen = length(ysim)
+      # cumulative variance 
+      # (following Kulldorff et al (2009), the denominator was changed to N)
       varin = nn.cumvar(nn, ysim)
       varout = nn.cumvar(nn, ysim, out = TRUE)
       tvar = var(ysim)
 
-      tobs = stat.normal(yin = yin, ty = ty, ysqin = ysqin, ysqout = ysqout,
+      tsim = stat.normal(yin = yin, ty = ty, ysqin = ysqin, ysqout = ysqout,
                         lenin = lenin, tlen = tlen, varin = varin, varout = varout, tvar = tvar)
-      max(tobs)
+      max(tsim)
     }
   }, cl = cl)
   unlist(tsim, use.names = FALSE)
@@ -73,7 +79,7 @@ arg_check_elliptic_sim = function(nsim, nn, ty, ex, ein, eout, shape_all) {
   }
   if (!is.list(nn)) stop("nn must be a list")
   if (length(ty) != 1 & type != "normal") stop("ty must be a single number")
-  if (!is.numeric(ex) & type != "normal") stop("ex must be a numeric vector")
+  if (!is.numeric(ex)) stop("ex must be a numeric vector")
   nstat = sum(sapply(nn, length))
   if (length(shape_all) != nstat) {
     stop("length(shapenn) is not compatible with the dimensionality of nn")
